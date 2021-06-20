@@ -1,0 +1,5 @@
+"0","t.test(mydata2$log_Toplam.yardım.alan.çocuk.sayısı[mydata2$Yıl==2019],mydata2$log_Toplam.yardım.alan.çocuk.sayısı[mydata2$Yıl==2020], data = mydata2, var.equal = TRUE) #  p-value = 0.2019 > 0.05 fail to reject 
+"
+"2","Error in if (stderr < 10 * .Machine$double.eps * max(abs(mx), abs(my))) stop(""data are essentially constant"") : 
+  TRUE/FALSE gereken yerde eksik değer
+"

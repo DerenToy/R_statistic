@@ -1,0 +1,8 @@
+"0","mydata2 <- mydata2 %>%
+  mutate(log_BASVURU_ADEDI = log(mydata2 $BASVURU_ADEDI))
+"
+"2","Hata: Problem with `mutate()` input `log_BASVURU_ADEDI`.
+[31mx[39m non-numeric argument to mathematical function
+[34mi[39m Input `log_BASVURU_ADEDI` is `log(mydata2$BASVURU_ADEDI)`.
+[90mRun `rlang::last_error()` to see where the error occurred.[39m
+"

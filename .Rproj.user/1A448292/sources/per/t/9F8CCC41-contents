@@ -1,0 +1,1013 @@
+---
+title: "STATISTICAL COMPUTING FINAL PROJECT"
+author: "Kıymet Deren TOY"
+date: "June 7, 2021"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+font-family: Gill Sans
+---
+
+
+# Introduction - Dataset 1
+
+<p>
+In this project, a total of 3 data sets will be examined. These datasets include social issues. Each dataset contains year information. Using this year's information, the impact of the pandemic on individual issues will be mentioned.
+</p><p>
+The first data set includes the support of hot meals, soup, pita and food to people living in İzmir. It is a matter of curiosity whether these aids increase during the pandemic.
+</p>
+
+
+```{r setup, include=FALSE, echo=FALSE, message=FALSE}
+knitr::opts_chunk$set(error = TRUE)
+library(ggplot2)
+library(MASS) 
+library(ggpubr)
+library(Hmisc)
+library(dplyr)
+library(readxl)
+library(RColorBrewer)
+library(nortest)
+
+```
+
+
+## Libraries
+```{r}
+# library(ggplot2)
+# library(MASS) 
+# library(ggpubr)
+# library(Hmisc)
+# library(dplyr)
+# library(readxl)
+# library(RColorBrewer)
+# library(nortest)
+
+```
+
+## Load Dataset 1
+```{r}
+mydata = read_excel("asevleri-yemek-yardimi.xlsx")
+mydata <- mutate(mydata, TOPLAM_YARDIM = VERILEN_YEMEK_SAYISI +  VERILEN_KUMANYA_SAYISI + VERILEN_PIDE_SAYISI + VERILEN_CORBA_SAYISI)
+```
+
+
+## Simple Summary
+
+```{r}
+summary(mydata)
+```
+
+
+## General Information About TOPLAM_YARDIM
+
+```{r}
+
+mydata %>% summarise("Mean"=mean(mydata$TOPLAM_YARDIM), "Median"=median(mydata$TOPLAM_YARDIM), "Standart Deviation"=sd(mydata$TOPLAM_YARDIM),"Variation"=var(mydata$TOPLAM_YARDIM),"Max"=max(mydata$TOPLAM_YARDIM),"Minimum"=min(mydata$TOPLAM_YARDIM),"IQR"=IQR(mydata$TOPLAM_YARDIM))
+
+
+```
+
+# Data Visualization - Dataset 1
+
+## Histograms
+```{r}
+
+hist(mydata$TOPLAM_YARDIM, main = "Histogram of TOPLAM_YARDIM",xlab = "TOPLAM_YARDIM" ,col="orange")
+
+```
+
+
+## Month Distribution
+
+```{r}
+
+month_percentage=mydata %>% count(AY)
+month_percentage <- month_percentage %>% 
+  arrange(desc(AY)) %>%
+  mutate(prop = format(round(n / sum(month_percentage$n) *100, 2), nsmall = 2)) %>%
+  mutate(ypos = cumsum(n)- 0.5*n )
+
+ getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+ colourCount = length(unique(mydata$AY))
+ 
+ggplot(month_percentage, aes(x="", y=n, fill=factor(AY))) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  geom_text(aes(y = ypos, label = prop), color = "white", size=3) +
+  scale_fill_manual(values = getPalette(colourCount))
+```
+
+From the pie chart above, we can see that the municipality regularly provides aid every month. The low in 10,11,12 months is due to the missing part of the data set.
+
+## Year Distribution
+
+```{r}
+
+year_percentage=mydata %>% count(YIL)
+year_percentage <- year_percentage %>% 
+  arrange(desc(YIL)) %>%
+  mutate(prop = format(round(n / sum(year_percentage$n) *100, 2), nsmall = 2)) %>%
+  mutate(ypos = cumsum(n)- 0.5*n )
+
+ getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+ colourCount = length(unique(mydata$YIL))
+ 
+ggplot(year_percentage, aes(x="", y=n, fill=factor(YIL))) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  geom_text(aes(y = ypos, label = prop), color = "white", size=3) +
+  scale_fill_manual(values = getPalette(colourCount))
+```
+
+From the pie chart above, we can see that the municipality regularly provides aid every year. The low in 2020 year is due to the missing part of the data set.
+
+
+
+# Analysis - Dataset 1
+
+## Distributions
+
+### Means Differences Between Months According to TOPLAM_YARDIM
+
+```{r}
+
+ggplot(mydata,aes(x=factor(AY),y=TOPLAM_YARDIM))+
+  geom_boxplot(fill="orange",colour="black")+
+  stat_summary(fun=mean, geom="point",shape="-" ,fill="red" , size=15, color="red")+
+  theme_bw()
+
+```
+
+
+In the graphic above, the red lines represent the average of the aids of those at the months. In general, a close distribution is observed. Outlier spots were detected in the ninth and fifth months.
+
+### Means Differences Between Years According to TOPLAM_YARDIM
+```{r}
+
+ggplot(mydata,aes(x=factor(YIL),y=TOPLAM_YARDIM))+
+  geom_boxplot(fill="purple",colour="black")+
+  stat_summary(fun=mean, geom="point",shape="-" ,fill="red" , size=15, color="red")+
+  theme_bw()
+
+```
+
+
+In the graphic above, the red lines represent the average of the aids of those at the years. When we look at the distribution and averages of years, we can see that the aid provided in 2020 is not more than in other years.
+
+### Means Differences Between Months According to VERILEN_CORBA_SAYISI
+
+```{r}
+
+ggplot(mydata,aes(x=factor(AY),y=VERILEN_CORBA_SAYISI))+
+  geom_boxplot(fill="pink",colour="black")+
+  stat_summary(fun=mean, geom="point",shape="-" ,fill="red" , size=15, color="red")+
+  theme_bw()
+
+```
+
+
+From the graph above, it is possible to say that the soups given in the summer months are very few, almost 0. In addition, outlier spots are observed in the second, eighth and ninth months.
+
+
+# Confidance Intervals - Dataset 1
+
+## Confidance Interval of TOPLAM_YARDIM
+```{r }
+sample.mean <- mean(mydata$TOPLAM_YARDIM)
+sample.n <- length(mydata$TOPLAM_YARDIM)
+sample.sd <- sd(mydata$TOPLAM_YARDIM)
+sample.se <- sample.sd/sqrt(sample.n)
+alpha = 0.05
+degrees.freedom = sample.n - 1
+t.score = qt(p=alpha/2, df=degrees.freedom,lower.tail=F)
+margin.error <- t.score * sample.se
+lower.bound <- sample.mean - margin.error
+upper.bound <- sample.mean + margin.error
+print(c(lower.bound,upper.bound))
+```
+
+As a result of the calculations, it was observed that the confidence intervals were 174449.7 and 196169.4.
+
+## Confidance Interval Between Years
+
+```{r}
+
+ggplot(mydata, aes(factor(YIL), TOPLAM_YARDIM, fill=YIL)) + 
+    stat_summary(fun = mean, geom = "bar") + 
+    stat_summary(aes(label=round(..y..,2)), fun=mean, geom="text", size=4, vjust = -0.5) +
+    stat_summary(fun.data = mean_cl_normal, geom = "errorbar")
+
+```
+
+
+When we look at the graph above, it is observed that the confidence interval of the aids in 2020 is much higher than the others. More consistent information can be provided with years other than 2020.
+
+
+## Confidance Interval Between Months according to  VERILEN_CORBA_SAYISI
+
+```{r}
+
+ggplot(mydata, aes(factor(AY), VERILEN_CORBA_SAYISI, fill=AY)) + 
+    stat_summary(fun = mean, geom = "bar") + 
+    stat_summary(aes(label=round(..y..,2)), fun=mean, geom="text", size=4, vjust = -0.5) +
+    stat_summary(fun.data = mean_cl_normal, geom = "errorbar")
+
+
+```
+
+
+When we look at the graph, it is observed that the confidence interval of the given soups at 12, 11 and 3 months are much higher than the others. Also, the given soups at 5, 6 and 7 months are 0. So, more consistent information can be provided with months other than these.
+
+# Normalization - Dataset 1
+
+## Normalize TOPLAM_YARDIM
+Normalizing the TOPLAM_YARDIM column before starting hypothesis testing.
+
+### Normality test for TOPLAM_YARDIM
+```{r}
+shapiro.test(mydata$TOPLAM_YARDIM) #  p-value = 0.0007329 -> it is too bad
+```
+
+### Log Transformation
+```{r}
+mydata %>%
+  ggplot(aes(x = TOPLAM_YARDIM)) +
+  geom_density()  
+```
+
+
+It would be good to do a log transformation as the data is skewed.
+
+```{r}
+mydata <- mydata %>%
+  mutate(log_TOPLAM_YARDIM = log(TOPLAM_YARDIM))
+
+# New graph
+mydata %>%
+  ggplot(aes(x = log_TOPLAM_YARDIM)) +
+  geom_density()  
+```
+
+### Normality test for log_TOPLAM_YARDIM
+```{r}
+shapiro.test(mydata$log_TOPLAM_YARDIM) # p-value = 0.02492
+```
+
+Let's do outlier detection and delete these points to bring the data closer to normal.
+
+### Outlier Detection
+```{r}
+
+mydata %>% 
+  ggplot(aes(x = 1, y = log_TOPLAM_YARDIM)) +
+  geom_boxplot()
+
+new_data <- mydata %>%
+  mutate(uc_deger = log_TOPLAM_YARDIM < 11 ) 
+
+new_data <- new_data[-c(164,165), ] 
+```
+
+
+Now our dataset is called new_data and we will use this dataset for the outlier deleted version.
+
+### Normality test for new_data$log_TOPLAM_YARDIM
+```{r}
+shapiro.test(new_data$log_TOPLAM_YARDIM) #p-value = 0.03293
+
+# Box plot
+new_data %>% 
+  filter(!uc_deger) %>% 
+  ggplot(aes(x = 1, y = log_TOPLAM_YARDIM)) +
+  geom_boxplot()
+
+```
+ 
+
+# Hypothesis Tests - Dataset 1
+
+
+## Are there	significant	difference	between	mean TOPLAM_YARDIM	of	2007	and	2020 years?
+
+**H0:** There is no significant difference between 	mean TOPLAM_YARDIM	of	2007	and	2020 years. 
+
+**H1:** There is significant difference between	mean TOPLAM_YARDIM	of	2007	and	2020 years.
+
+```{r}
+
+# Before normalizing
+t.test(mydata$TOPLAM_YARDIM[mydata$YIL==2007],mydata$TOPLAM_YARDIM[mydata$YIL==2020], data = mydata, var.equal = TRUE)  #p-value = 0.1667 > 0.05 fail to reject
+
+# After log transformation
+t.test(mydata$log_TOPLAM_YARDIM[mydata$YIL==2007],mydata$log_TOPLAM_YARDIM[mydata$YIL==2020], data = mydata, var.equal = TRUE)  #p-value = p-value = 0.5268 > 0.05 fail to reject
+
+# After Outlier and Log Transformation
+t.test(new_data$log_TOPLAM_YARDIM[new_data$YIL==2007],new_data$log_TOPLAM_YARDIM[new_data$YIL==2020], data = new_data, var.equal = TRUE) #  p-value = 0.08165 > 0.05 fail to reject 
+
+
+```
+
+
+As I was curious about this hypothesis test, I applied 3 different t-tests using the formats of the data before normalization, after the log transform, and finally, the outliers were deleted.
+p value = 0.1667 before normalization
+p-value = 0.5268 after log transform
+p-value = 0.08165 after deleting the Outliers
+
+Since every p-value here is greater than the significance level alpha, we fail in rejecting H0. Also, that the confidence interval value covers 0 shows that we will fail while rejecting H0. We can conclude that 2007 year's total help is not significantly different from 2020 year's average total help while p-value is greater than 0.05.
+
+Finally, when we look at the three p-values ​​here, we see that we got the strongest result after the log transformation. However, the most normal state of the data was after the outliers were deleted, and I actually thought that the strongest result would be after the outliers were deleted. But then I realized that since the deleted data belongs to the year 2020, the t test with the data after the outliers were deleted gave lower results.
+
+
+## Is there a significant difference between the soups given in winter and summer?
+
+**H0:** There is no significant difference between the soups given in winter and summer.
+
+**H1:**  There is significant difference between the soups given in winter and summer.
+
+
+```{r }
+
+winter = subset(new_data, subset = new_data$AY == "12" | new_data$AY == "1" |  new_data$AY == "2" )
+summer = subset(new_data, subset = new_data$AY == "6" | new_data$AY == "7" |  new_data$AY == "8" )
+t.test(winter$VERILEN_CORBA_SAYISI,summer$VERILEN_CORBA_SAYISI, var.equal = TRUE) # p-value = 4.545e-07
+
+
+
+```
+
+The p-value of the test is  4.545e-07, which is less than the significance level alpha = 0.05. We can reject H0, in other words the case that there is no significant difference between winter and summer with p-value 4.545e-07. In the box plot, which shows the soups given according to the months above, it can be easily seen that there is such a difference.
+
+
+# Anova Part - Dataset 1
+
+## Do the total number of aids change according to years?
+
+**H0:** The total number of aids do not change according to years.
+
+**H0:** µ1 = µ2 = µ3 = µ4 = µ5 = µ6 = µ7 = µ8 = µ9 = µ10 = µ11 = µ12 = µ13 = µ14
+
+**H1:** The µ<sub>i</sub> are not all equal.
+
+First, let's check if the data is categorical and draw a graph.
+```{r}
+
+new_data$YIL = as.factor(new_data$YIL)
+is.factor(new_data$YIL) #true
+
+ggplot(new_data, aes(YIL,TOPLAM_YARDIM))+geom_boxplot(aes(col=YIL))
+```
+
+**Anova test: **
+```{r}
+model1 = aov(new_data$TOPLAM_YARDIM ~ new_data$YIL)
+summary(model1)
+
+```
+
+It was observed that the f-statistic was 31.76 and the corresponding p-value was quite significant since it was much less than the significance level. Therefore, it would be wise to reject the H0 hypothesis, which says that the total number of aids made in all years is equal. In other words, the total aid in 14 years is not equal. We apply the Tukey test to understand in which years there is a significant difference.
+
+**Tukey Test:** With this test, we detect variables that differ significantly.
+
+```{r}
+TukeyHSD(model1, conf.level = 0.95)
+```
+When we look at the pairs in general, we can say that there is a significant difference between them. For example: 2011-2007.
+
+# Introduction - Dataset 2
+<p>
+The second data set includes the records in children and youth centers in İzmir. It is possible to reach the total number of children coming to these centers and the number of children receiving psychological support in these centers. It is a matter of curiosity whether the number of students receiving psychological support in these centers has increased with the pandemic in 2020.
+</p>
+
+## Load Dataset 2
+
+```{r}
+mydata2 = read.csv("cocuk-ve-genclik-merkezi.csv",encoding="UTF-8")
+mydata2 <- mutate(mydata2, Toplam.yardım.alan.çocuk.sayısı = Psikolojik.Danışmanlık.Alan.Kız.Çocuk.Sayısı  + Psikolojik.Danışmanlık.Alan.Oğlan.Çocuk.Sayısı )
+
+
+
+```
+
+## Simple Summary About Dataset 2
+
+```{r}
+summary(mydata2)
+```
+
+
+
+# Data Visualization - Dataset 2
+
+## Histograms
+
+```{r}
+
+hist(mydata2$Toplam.Çocuk, main = "Histogram of Toplam.Cocuk",xlab = "Toplam.Cocuk" ,col="pink")
+hist(mydata2$Toplam.yardım.alan.çocuk.sayısı, main = "Histogram of Toplam.yardım.alan.çocuk.sayısı",xlab = "Toplam.yardım.alan.çocuk.sayısı" ,col="pink")
+
+
+```
+
+
+## Male and Female Students Receiving Psychological Support
+
+```{r}
+total_psikolojik_kiz= c(sum(mydata2$Psikolojik.Danışmanlık.Alan.Kız.Çocuk.Sayısı))
+total_psikolojik_oglan = c(sum(mydata2$Psikolojik.Danışmanlık.Alan.Oğlan.Çocuk.Sayısı))
+total_psikolojik_destek = c(sum(total_psikolojik_kiz,total_psikolojik_oglan)) #1141
+
+
+psikolojik_destek <- c("total_psikolojik_kiz","total_psikolojik_oglan")
+df_person <- data.frame(
+  psikolojik_destek,  
+  Count=c(total_psikolojik_kiz,total_psikolojik_oglan)
+  )
+
+
+ggplot(data=df_person, aes(x=psikolojik_destek,Count)) +
+  geom_bar(stat="identity", fill = "#FF6666")
+```
+
+Looking at the graph, it is seen that there are more female students who receive psychological support.
+
+## Distribution of Students by School Levels
+
+```{r}
+okul.öncesi= c(sum(mydata2$Okul.Öncesi))
+ilkokul= c(sum(mydata2$İlkokul))
+ortaokul= c(sum(mydata2$Ortaokul))
+lise= c(sum(mydata2$Lise))
+
+
+okul_isimleri <- c("okul öncesi","ilkokul","ortaokul","lise")
+df_okul <- data.frame(
+  okul_isimleri,  
+  Count=c(okul.öncesi,ilkokul,ortaokul,lise)
+  )
+
+
+ggplot(data=df_okul, aes(x=okul_isimleri,Count)) +
+  geom_bar(stat="identity", fill = "orange")
+```
+
+
+When we look at the graph, we can see that the students who come to the center are generally those who go to primary school.
+
+
+
+## District Distribution
+```{r birim_adi}
+birim_percentage=mydata2 %>% count(Birim.Adı)
+birim_percentage <- birim_percentage %>% 
+  arrange(desc(Birim.Adı)) %>%
+  mutate(prop = format(round(n / sum(birim_percentage$n) *100, 2), nsmall = 2)) %>%
+  mutate(ypos = cumsum(n)- 0.5*n )
+
+ggplot(birim_percentage, aes(x="", y=n, fill=factor(Birim.Adı))) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  
+  geom_text(aes(y = ypos, label = prop), color = "white", size=3) +
+  scale_fill_brewer(palette="Set2")
+  
+```
+
+
+When we look at the pie chart, we can see that there is more data on Çİğli and Uzundere.
+
+
+## Total number of children receiving aid by Birim_Adı
+```{r}
+
+ggplot(mydata2,aes(x=factor(Birim.Adı), y=Toplam.yardım.alan.çocuk.sayısı))+
+  geom_bar(stat="identity")
+
+```
+
+The district that received the most psychological support is Buca. The least help was received in Toros.
+
+
+# Analysis - Dataset 2
+
+## Distributions
+
+
+### Means Differences Between Years According to Toplam.yardım.alan.çocuk.sayısı
+
+```{r}
+
+ggplot(mydata2,aes(x=factor(Yıl),y=Toplam.yardım.alan.çocuk.sayısı))+
+  geom_boxplot(fill="orange",colour="black")+
+  stat_summary(fun=mean, geom="point",shape="-" ,fill="red" , size=15, color="red")+
+  theme_bw()
+
+```
+
+It is seen that the number of children receiving aid was the highest in 2017. The pandemic in 2020 does not seem to have increased the number of children receiving support.
+
+### Means Differences Between Years According to Toplam.Cocuk
+```{r  }
+
+ggplot(mydata2,aes(x=factor(Yıl),y=Toplam.Çocuk))+
+  geom_boxplot(fill="purple",colour="black")+
+  stat_summary(fun=mean, geom="point",shape="-" ,fill="red" , size=15, color="red")+
+  theme_bw()
+
+```
+
+
+In 2020, there has been a decrease in the number of children coming to the center with the pandemic. This may be due to prohibitions for children.
+
+
+
+# Confidance Intervals - Dataset 2
+
+
+## Confidance Interval Between Years According to Toplam.Cocuk
+
+```{r }
+
+ggplot(mydata2, aes(factor(Yıl), Toplam.Çocuk, fill=Yıl)) + 
+    stat_summary(fun = mean, geom = "bar") + 
+    stat_summary(aes(label=round(..y..,2)), fun=mean, geom="text", size=4, vjust = -0.5) +
+    stat_summary(fun.data = mean_cl_normal, geom = "errorbar")
+
+```
+
+
+The high confidence interval in 2017, 2018 and 2019 shows that we should trust the data in this section less.
+
+## Confidance Interval Between Years according to Toplam.yardım.alan.çocuk.sayısı
+
+```{r}
+
+ggplot(mydata2, aes(factor(Yıl), Toplam.yardım.alan.çocuk.sayısı, fill=Yıl)) + 
+    stat_summary(fun = mean, geom = "bar") + 
+    stat_summary(aes(label=round(..y..,2)), fun=mean, geom="text", size=4, vjust = -0.5) +
+    stat_summary(fun.data = mean_cl_normal, geom = "errorbar")
+
+```
+
+
+The wide confidence interval in 2017 reduces our confidence in the data for that year.
+
+
+# Normalization - Dataset 2
+## Normalize to Toplam.yardım.alan.çocuk.sayısı
+
+### Normality test for Toplam.yardım.alan.çocuk.sayısı and Toplam.Çocuk
+```{r}
+shapiro.test(mydata2$Toplam.yardım.alan.çocuk.sayısı) #  p-value = 3.05e-08 -> very bad
+shapiro.test(mydata2$Toplam.Çocuk) #   p-value = 0.0142 -> eh
+```
+Since it is below 0.05 in two values, it cannot be considered normal.
+
+### Log Transformation
+```{r}
+mydata2 %>%
+  ggplot(aes(x = Toplam.yardım.alan.çocuk.sayısı)) +
+  geom_density()  
+
+mydata2 <- mydata2 %>%
+  mutate(log_Toplam.yardım.alan.çocuk.sayısı = log(Toplam.yardım.alan.çocuk.sayısı))
+
+# New graph
+mydata2 %>%
+  ggplot(aes(x = log_Toplam.yardım.alan.çocuk.sayısı)) +
+  geom_density()
+```
+
+
+
+### Outlier Detection
+```{r}
+
+mydata2 %>% 
+  ggplot(aes(x = 1, y = Toplam.yardım.alan.çocuk.sayısı)) +
+  geom_boxplot()
+
+new_data2 <- mydata2 %>%
+  mutate(alt_deger = mydata2$Toplam.yardım.alan.çocuk.sayısı < 1 )
+
+new_data2 <- new_data2 %>%
+  mutate(uc_deger = mydata2$Toplam.yardım.alan.çocuk.sayısı > 100 ) 
+
+new_data2 <- new_data2[-c(1,2,3,5,8,11,10,14,19,22), ]
+new_data2 %>%
+  ggplot(aes(x = log_Toplam.yardım.alan.çocuk.sayısı)) +
+  geom_density() 
+
+
+```
+
+After the outliers are deleted and the log transformation is applied, we run the normality test again.
+
+### Normality test for new_data2$log_Toplam.yardım.alan.çocuk.sayısı
+```{r}
+shapiro.test(new_data2$log_Toplam.yardım.alan.çocuk.sayısı) # p-value = 0.1822 -> very good
+```
+
+We have ensured that the p-value exceeds 0.05 by a certain percentage. From here on we will use the new_data2 dataset.
+
+# Hypothesis Tests - Dataset 2
+
+
+## Are there	significant	difference	between	mean log_Toplam.yardım.alan.çocuk.sayısı	of	2019	and	2020 years?
+
+**H0:** There is no significant difference between 	mean log_Toplam.yardım.alan.çocuk.sayısı	of	2007	and	2020 years.
+
+**H1:** There is significant difference between	mean log_Toplam.yardım.alan.çocuk.sayısı	of	2007	and	2020 years.
+
+```{r}
+
+t.test(new_data2$log_Toplam.yardım.alan.çocuk.sayısı[new_data2$Yıl==2019],new_data2$log_Toplam.yardım.alan.çocuk.sayısı[new_data2$Yıl==2020], data = new_data2, var.equal = TRUE) #  p-value = 0.2019 > 0.05 fail to reject 
+
+
+```
+
+The p-value of the test is 0.2019, which is more than the significance level alpha = 0.05. We can conclude that 2019's average total number of children receiving assistance is not significantly different from 2020’s average total number of children receiving assistance with a p-value = 0.2019.
+
+
+# Anova Part - Dataset 2
+
+## Do the total number of children receiving psychological support change according to years?
+
+**H0:** The total number of children receiving psychological support do not change according to years.
+
+**H0:** µ1 = µ2 = µ3 = µ4 = µ5 = µ6 
+
+**H1:** The µ<sub>i</sub> are not all equal.
+
+First, let's check if the data is categorical and draw a graph.
+```{r}
+
+mydata2$Yıl = as.factor(mydata2$Yıl)
+is.factor(mydata2$Yıl) #true
+
+ggplot(mydata2, aes(Yıl,Toplam.yardım.alan.çocuk.sayısı))+geom_boxplot(aes(col=Yıl))
+```
+
+
+
+**Anova test: **
+```{r}
+model2 = aov(mydata2$Toplam.yardım.alan.çocuk.sayısı ~ mydata2$Yıl)
+summary(model2)
+
+```
+
+The p value appears to be greater than 0.05 in the above ANOVA output. This indicates that we could not find a statistically significant result and we would not reject the H0 hypothesis. The unequal variances is one of the reasons why we cannot reject H0.
+
+
+## Do the total number of children receiving psychological support change according to Birim.Adı?
+
+**H0:** The total number of children receiving psychological support do not change according to years.
+
+**H0:** µ1 = µ2 = µ3 = µ4 = µ5 = µ6 = µ7
+**H1:** The µ<sub>i</sub> are not all equal.
+
+First, let's check if the data is categorical and draw a graph.
+```{r}
+
+mydata2$Birim.Adı = as.factor(mydata2$Birim.Adı)
+is.factor(mydata2$Birim.Adı) #true
+
+ggplot(mydata2, aes(Birim.Adı,Toplam.yardım.alan.çocuk.sayısı))+geom_boxplot(aes(col=Birim.Adı))
+```
+
+**Anova test: **
+```{r}
+model5 = aov(mydata2$Toplam.yardım.alan.çocuk.sayısı ~ mydata2$Birim.Adı)
+summary(model5)
+
+```
+
+The p-value value is below the significance level. There is significance here and it would be quite meaningful to reject the H0 hypothesis. In other words, the number of students receiving psychological support in certain units is not equal.
+
+# Introduction - Dataset 3
+<p>
+The third data set includes the social assistance applications made to the municipality in İzmir. It will be possible to search for answers to questions such as which gender people make the most applications, and for which support the most applications are made. In addition, it will be investigated whether these aid applications increase during the pandemic period.
+</p>
+
+
+## Load Dataset 3
+```{r}
+
+mydata3 = read.csv("sosyal-yardim-basvurulari.csv",encoding="UTF-8")
+
+```
+
+## Simple Summary About Data
+
+```{r}
+summary(mydata3)
+```
+
+## General Information About BASVURU_ADEDI
+
+```{r}
+
+mydata3 %>% summarise("Mean"=mean(mydata3$BASVURU_ADEDI), "Median"=median(mydata3$BASVURU_ADEDI), "Standart Deviation"=sd(mydata3$BASVURU_ADEDI),"Variation"=var(mydata3$BASVURU_ADEDI),"Max"=max(mydata3$BASVURU_ADEDI),"Minimum"=min(mydata3$BASVURU_ADEDI),"IQR"=IQR(mydata3$BASVURU_ADEDI))
+
+
+```
+
+
+# Data Visualization  - Dataset 3
+
+## Histogram
+```{r }
+
+hist(mydata3$BASVURU_ADEDI, main = "Histogram of BASVURU_ADEDI",xlab = "BASVURU_ADEDI" ,col="pink",ylim = c(0,20)) #skewed
+
+
+```
+
+
+It is observed that the data is skewed. Applying log transformation would be good for normalizing.
+
+
+## BASVURU_ADEDI Distribution by Gender
+
+```{r}
+
+gender_percentage=mydata3 %>% count(CINSIYET)
+gender_percentage <- gender_percentage %>% 
+  arrange(desc(CINSIYET)) %>%
+  mutate(prop = format(round(n / sum(gender_percentage$n) *100, 2), nsmall = 2)) %>%
+  mutate(ypos = cumsum(n)- 0.5*n )
+
+ggplot(gender_percentage, aes(x="", y=n, fill=CINSIYET)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  
+  geom_text(aes(y = ypos, label = prop), color = "black", size=3) +
+  scale_fill_brewer(palette="dark2")
+
+```
+
+
+It is observed that the gender that applied for assistance the most is men.
+
+
+
+## BASVURU_SEKLI Distribution
+
+```{r}
+help_percentage=mydata3 %>% count(BASVURU_SEKLI)
+help_percentage
+help_percentage <- help_percentage %>% 
+  arrange(desc(BASVURU_SEKLI)) %>%
+  mutate(prop = format(round(n / sum(help_percentage$n) *100, 2), nsmall = 2)) %>%
+  mutate(ypos = cumsum(n)- 0.5*n )
+
+ getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+ colourCount = length(unique(mydata3$BASVURU_SEKLI))
+
+ggplot(help_percentage, aes(x="", y=n, fill=BASVURU_SEKLI)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  scale_fill_manual(values = getPalette(colourCount))
+
+```
+
+## Number of applications according to the BASVURU_SEKLI
+```{r}
+
+ggplot(mydata3,aes(x=factor(BASVURU_SEKLI), y=BASVURU_ADEDI))+
+  geom_bar(stat="identity")
+
+```
+It is observed that most of the applications are made by petition.
+
+## BASVURU_TIPI Distribution
+
+```{r}
+help_percentage=mydata3 %>% count(BASVURU_TIPI)
+help_percentage
+help_percentage <- help_percentage %>% 
+  arrange(desc(BASVURU_TIPI)) %>%
+  mutate(prop = format(round(n / sum(help_percentage$n) *100, 2), nsmall = 2)) %>%
+  mutate(ypos = cumsum(n)- 0.5*n )
+
+ getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+ colourCount = length(unique(mydata3$BASVURU_TIPI))
+
+ggplot(help_percentage, aes(x="", y=n, fill=BASVURU_TIPI)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  scale_fill_manual(values = getPalette(colourCount))
+
+
+
+```
+
+It is observed that the application type mostly belongs to the category of citizens and the disabled.
+
+
+## Number of applications according to the BASVURU_TIPI
+```{r}
+
+ggplot(mydata3,aes(x=BASVURU_ADEDI, y=factor(BASVURU_TIPI)))+
+  geom_bar(stat="identity")
+
+```
+
+It has been observed that most of the applications are made in the citizen type.
+
+## Number of applications according to the BASVURU_TIPI
+```{r}
+
+ggplot(mydata3,aes(x=BASVURU_ADEDI, y=factor(YARDIM_TALEBI)))+
+  geom_bar(stat="identity")
+
+```
+
+Most aid requests came from the basic needs category such as food and milk.
+
+
+## Year Distribution
+```{r}
+year_percentage=mydata3 %>% count(YIL)
+year_percentage <- year_percentage %>% 
+  arrange(desc(YIL)) %>%
+  mutate(prop = format(round(n / sum(year_percentage$n) *100, 2), nsmall = 2)) %>%
+  mutate(ypos = cumsum(n)- 0.5*n )
+
+ getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+ colourCount = length(unique(mydata3$YIL))
+ 
+ggplot(year_percentage, aes(x="", y=n, fill=factor(YIL))) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  geom_text(aes(y = ypos, label = prop), color = "white", size=3) +
+  scale_fill_manual(values = getPalette(colourCount))
+```
+
+
+
+It is observed that applications are made more frequently in 2020 and 2019.
+
+# Confidance Intervals - Dataset 3
+
+## Confidance Interval Between Years according to BASVURU_ADEDI
+
+```{r}
+
+ggplot(mydata3, aes(factor(YIL), BASVURU_ADEDI, fill=YIL)) + 
+    stat_summary(fun = mean, geom = "bar") + 
+    stat_summary(aes(label=round(..y..,2)), fun=mean, geom="text", size=4, vjust = -0.5) +
+    stat_summary(fun.data = mean_cl_normal, geom = "errorbar")
+
+```
+
+Data for 2012 seem more unreliable.
+
+## Confidance Interval Between Genders
+
+```{r}
+
+ggplot(mydata3, aes(factor(CINSIYET), BASVURU_ADEDI, fill=CINSIYET)) + 
+    stat_summary(fun = mean, geom = "bar") + 
+    stat_summary(aes(label=round(..y..,2)), fun=mean, geom="text", size=4, vjust = -0.5) +
+    stat_summary(fun.data = mean_cl_normal, geom = "errorbar")
+
+```
+
+
+# Normalization - Dataset 3
+
+## Normalize Toplam.yardım.alan.çocuk.sayısı
+
+We used the shapiro wilk test to test for normality in previous data. But now we use the Anderson-Darling normality test because the dataset is large.
+
+### Normallik testi for Toplam.yardım.alan.çocuk.sayısı and Toplam.Çocuk
+```{r}
+
+ad.test(mydata3$BASVURU_ADEDI) # p-value < 2.2e-16
+
+```
+
+### Log Transformation
+```{r}
+mydata3 <- mydata3 %>%
+  mutate(log_BASVURU_ADEDI = log(BASVURU_ADEDI))
+
+```
+
+# Hypothesis Tests - Dataset 3
+
+
+## Are there	significant	difference	between	mean BASVURU_ADEDI	of	2019	and	2020 years?
+
+**H0:** There is no significant difference between 	mean BASVURU_ADEDI	of	2019	and	2020 years.
+
+**H1:** There is significant difference between	mean BASVURU_ADEDI	of	2019	and	2020 years.
+
+```{r}
+
+t.test(mydata3$log_BASVURU_ADEDI[mydata3$YIL == 2020], mydata3$log_BASVURU_ADEDI[mydata3$YIL == 2019], data = mydata3, var.equal = TRUE)
+
+```
+
+The p-value of the test is 0.8861, which is more than the significance level alpha = 0.05. And it covers confidence interval 0. This means that there are cases where these two values are close to each other. That is, we fail while rejecting the H0 hypothesis. We can conclude that there is no difference between mean BASVURU_ADEDI of 2019 and 2020 years.
+
+# Anova Part - Dataset 3
+
+## Do the number of applications change according to years?
+
+**H0:** The number of applications do not change according to years.
+
+**H0:** µ1 = µ2 = µ3 = µ4 = µ5 = µ6 = µ7 = µ8 = µ9 = µ10
+
+**H1:** The µ<sub>i</sub> are not all equal.
+
+We check if the data is categorical and plot a boxplot graph.
+```{r}
+
+mydata3$YIL = as.factor(mydata3$YIL)
+is.factor(mydata3$YIL) #true
+
+ggplot(mydata3, aes(YIL,BASVURU_ADEDI))+geom_boxplot(aes(col=YIL))
+```
+
+
+Since the data is categorical, we can do ANOVA.
+
+**Anova test: **
+```{r}
+model3 = aov(mydata3$BASVURU_ADEDI ~ mydata3$YIL)
+summary(model3)
+
+```
+
+It was observed that the f-statistic value was 13.14 and the corresponding p-value was much less than the significance level. Therefore, it would be wise to reject the H0 hypothesis, which states that the number of applications made in all years is equal. In other words, applications over 10 years are not equal. We apply the Tukey test to understand in which years there is a difference.
+
+**Tukey Test:** With this test, we detect variables that differ significantly.
+
+```{r }
+TukeyHSD(model3, conf.level = 0.95)
+```
+
+
+## Do the number of applications change according to genders?
+
+**H0:** The number of applications do not change according to genders.
+
+**H0:** µ1 = µ2 = µ3 
+
+**H1:** The µ<sub>i</sub> are not all equal.
+
+
+```{r}
+mydata3$CINSIYET = as.factor(mydata3$CINSIYET)
+is.factor(mydata3$CINSIYET) #true
+
+ggplot(mydata3, aes(CINSIYET,BASVURU_ADEDI))+geom_boxplot(aes(col=CINSIYET))
+```
+
+Since the data is categorical, we can apply ANOVA.
+
+**Anova test: **
+```{r}
+model4 = aov(mydata3$BASVURU_ADEDI ~ mydata3$CINSIYET)
+summary(model4)
+
+```
+
+The P value was less than the significance level. In this case, it would be more correct to reject H0. In other words, the number of applications made is not the same for all genders.
+
+**Tukey Test:**
+```{r}
+TukeyHSD(model4, conf.level = 0.95)
+```
+
+As can be seen, there is a significant difference between KADIN-BELİRSİZ pairs and KADIN-ERKEK pairs.
+
+
+# Discussion
+Considering the **effects of the pandemic on social actions**,
+
+ **-**  it was observed that there was no significant increase in the aid provided by the municipality during the pandemic period.
+ 
+ **-** it has been observed that children go to children and education centers less and there is no significant increase in the number of children receiving psychological support.
+ 
+ **-** it has been observed that the number of aid applications made during the pandemic period has increased.
+
+# References
+[Dataset 1](https://acikveri.bizizmir.com/tr/dataset/yemek-corba-pide-kumanya-destegi/resource/98c11b1c-095f-4135-b7a2-ca0e72a7489c)
+
+[Dataset 2 ](https://acikveri.bizizmir.com/tr/dataset/cocuk-ve-genclik-merkezleri-cogem/resource/3ea92159-e95b-4149-9d7b-6e9e012955d6)
+
+[Dataset 3 ](https://acikveri.bizizmir.com/tr/dataset/izmir-buyuksehir-belediyesine-sosyal-yardim-basvurulari/resource/04ad0a96-4931-4491-ba85-a700ac50a7df)
